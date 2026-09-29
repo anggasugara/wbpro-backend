@@ -1,0 +1,5 @@
+import { Bot, Check, Plus, Power } from "lucide-react";
+export default function Bots() {
+  const bots=[["Welcome Bot","Auto reply saat pelanggan menghubungi nomor bisnis."],["FAQ Assistant","Menjawab pertanyaan umum secara otomatis."],["Order Bot","Flow sederhana untuk menerima data pesanan."]];
+  return <div><div className="welcome"><div><span className="eyebrow">AUTOMATION</span><h1>Bot Automation</h1><p>Buat alur otomatis untuk percakapan pelanggan.</p></div><button className="primary-btn small"><Plus size={17}/> Create Bot</button></div><div className="cards-grid">{bots.map((b,i)=><div className="panel bot-card" key={b[0]}><div className="bot-head"><div className="bot-icon"><Bot/></div><span className={`status-pill ${i===2?"muted":"success"}`}><Power size={13}/> {i===2?"Draft":"Active"}</span></div><h3>{b[0]}</h3><p>{b[1]}</p><div className="bot-meta"><span><Check size={15}/> Trigger configured</span><button className="outline-btn">Edit</button></div></div>)}</div></div>;
+}
