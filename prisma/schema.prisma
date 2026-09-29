@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  AGENT
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  FAILED
+  READ
+  REPLIED
+}
+
+model Workspace {
+  id        String    @id @default(cuid())
+  name      String
+  createdAt DateTime  @default(now())
+  users     User[]
+  contacts  Contact[]
+  templates Template[]
+  accounts  WhatsAppAccount[]
+  campaigns Campaign[]
+}
+
+model User {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         Role      @default(AGENT)
+  createdAt    DateTime  @default(now())
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Contact {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  phone       String
+  tag         String?
+  optedIn     Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  messages    Message[]
+  @@unique([workspaceId, phone])
+  @@index([workspaceId, name])
+}
+
+model Template {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  body        String
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model WhatsAppAccount {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  phone       String?
+  status      String    @default("DISCONNECTED")
+  connector   String    @default("baileys")
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  campaigns   Campaign[]
+  messages    Message[]
+}
+
+model Campaign {
+  id          String         @id @default(cuid())
+  workspaceId String
+  accountId   String
+  name        String
+  body        String
+  status      CampaignStatus @default(DRAFT)
+  scheduledAt DateTime?
+  createdAt   DateTime       @default(now())
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account     WhatsAppAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  messages    Message[]
+  @@index([workspaceId, status])
+}
+
+model Message {
+  id          String        @id @default(cuid())
+  campaignId  String?
+  accountId   String
+  contactId   String
+  body        String
+  status      MessageStatus @default(QUEUED)
+  providerId  String?
+  error       String?
+  createdAt   DateTime      @default(now())
+  sentAt      DateTime?
+  readAt      DateTime?
+  repliedAt   DateTime?
+  campaign    Campaign?     @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  account     WhatsAppAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  contact     Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  @@index([accountId, status])
+  @@index([campaignId, status])
+}
